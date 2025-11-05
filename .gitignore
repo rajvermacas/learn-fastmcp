@@ -28,7 +28,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-.env.*
 .envrc
 
 # IDE and editors
