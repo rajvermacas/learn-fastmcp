@@ -121,13 +121,23 @@ class MCPConfig(BaseSettings):
         Convert config to dictionary suitable for app.run(**config).
 
         This method prepares the configuration dictionary for passing to
-        the FastMCP app.run() method.
+        the FastMCP app.run() method. Different transport types accept
+        different parameters:
+        - STDIO: Only accepts 'transport' parameter
+        - HTTP/Streamable-HTTP: Accept 'transport', 'host', and 'port' parameters
 
         Returns:
-            dict: Configuration dictionary with keys: transport, host, port
+            dict: Configuration dictionary appropriate for the transport type
+                - STDIO: {'transport': 'stdio'}
+                - HTTP: {'transport': 'streamable-http', 'host': '0.0.0.0', 'port': 8000}
 
         Example:
-            >>> config = MCPConfig()
+            >>> config = MCPConfig(mcp_transport='stdio')
+            >>> run_config = config.to_run_config()
+            >>> print(run_config)
+            {'transport': 'stdio'}
+
+            >>> config = MCPConfig(mcp_transport='streamable-http')
             >>> run_config = config.to_run_config()
             >>> print(run_config)
             {'transport': 'streamable-http', 'host': '0.0.0.0', 'port': 8000}
@@ -138,6 +148,19 @@ class MCPConfig(BaseSettings):
             else self.mcp_transport
         )
         logger.debug(f"Converting config to run_config: transport={transport_value}")
+
+        # STDIO transport doesn't accept host/port parameters
+        if transport_value == TransportType.STDIO.value:
+            logger.debug("STDIO transport: excluding host and port parameters")
+            return {
+                "transport": transport_value,
+            }
+
+        # HTTP/Streamable-HTTP transports require host and port
+        logger.debug(
+            f"HTTP transport: including host ({self.mcp_host}) "
+            f"and port ({self.mcp_port}) parameters"
+        )
         return {
             "transport": transport_value,
             "host": self.mcp_host,

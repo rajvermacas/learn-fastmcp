@@ -107,8 +107,12 @@ def main():
         # Get run configuration
         run_config = config.to_run_config()
 
-        # Start server
-        logger.info(f"Server starting on {config.mcp_host}:{config.mcp_port}")
+        # Start server with transport-aware logging
+        if run_config.get("transport") == "stdio":
+            logger.info("Server starting with STDIO transport")
+        else:
+            logger.info(f"Server starting on {config.mcp_host}:{config.mcp_port} "
+                       f"({run_config.get('transport', 'unknown')} transport)")
         app.run(**run_config)
 
     except ValueError as e:
