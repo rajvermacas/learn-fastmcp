@@ -11,9 +11,13 @@ dependencies = [
     "asyncio",
 ]
 
+[project.scripts]
+learn-fastmcp = "learn_fastmcp.main:main"
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+

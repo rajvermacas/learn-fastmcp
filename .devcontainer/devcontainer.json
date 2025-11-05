@@ -15,7 +15,8 @@
         "anthropic.claude-code",
         "mhutchie.git-graph",
         "eamodio.gitlens",
-        "openai.chatgpt"
+        "openai.chatgpt",
+        "ms-python.python"
       ]
     }
   },
