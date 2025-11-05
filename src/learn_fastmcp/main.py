@@ -1,11 +1,25 @@
-# server.py
+"""
+FastMCP Server - Main Entry Point
+
+This module provides the main entry point for the FastMCP server application.
+It demonstrates different transport mechanisms for MCP (Model Context Protocol).
+"""
+
 import asyncio
-import os
+import logging
 import sys
-from dotenv import load_dotenv
+
 from fastmcp import FastMCP, Context
 
-load_dotenv()
+from learn_fastmcp.config import load_config
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
 # FastMCP is a framework for building MCP (Model Context Protocol) apps.
@@ -20,59 +34,38 @@ load_dotenv()
 
 app = FastMCP("mcp-protocol-demo")
 
-def parse_config() -> dict:
-    """
-    Parse configuration from environment variables.
-
-    Environment variables:
-    - MCP_TRANSPORT: Transport type (stdio, sse, streamable-http)
-    - MCP_HOST: Server host (default: 127.0.0.1)
-    - MCP_PORT: Server port (default: 8000)
-
-    Returns:
-        dict: Configuration dictionary for app.run(**config)
-    """
-    # Configuration constants
-    VALID_TRANSPORTS = {"stdio", "streamable-http"}
-    DEFAULT_TRANSPORT = "streamable-http"
-    DEFAULT_HOST = "0.0.0.0"
-    DEFAULT_PORT = 8000
-
-    # Parse transport type
-    transport = os.getenv("MCP_TRANSPORT", DEFAULT_TRANSPORT)
-
-    # Validate transport type
-    if transport not in VALID_TRANSPORTS:
-        raise ValueError(
-            f"Invalid transport: '{transport}'. "
-            f"Must be one of {VALID_TRANSPORTS}"
-        )
-
-    # Parse and validate port
-    try:
-        port = int(os.getenv("MCP_PORT", str(DEFAULT_PORT)))
-        if port < 1 or port > 65535:
-            raise ValueError(f"Port must be between 1 and 65535, got {port}")
-    except ValueError as e:
-        raise ValueError(f"Invalid port: {e}")
-
-    # Build configuration dictionary
-    config = {
-        "transport": transport,
-        "host": os.getenv("MCP_HOST", DEFAULT_HOST),
-        "port": port,
-    }
-
-    return config
-
 
 @app.tool("add", description="Add two numbers (plain HTTP)")
 def add_tool(a: float, b: float) -> dict:
+    """
+    Add two numbers and return the result.
+
+    Args:
+        a: First number
+        b: Second number
+
+    Returns:
+        dict: Dictionary containing inputs and sum
+    """
+    logger.info(f"Adding {a} + {b}")
     return {"a": a, "b": b, "sum": a + b}
 
 
 @app.tool("stream_sum", description="Calculate sum with progress notifications")
 async def stream_sum_tool(n: int, ctx: Context):
+    """
+    Calculate sum of numbers from 1 to n with progress reporting.
+
+    This demonstrates streaming capabilities with progress notifications.
+
+    Args:
+        n: Upper limit for sum calculation
+        ctx: FastMCP context for progress reporting
+
+    Returns:
+        dict: Final sum and number of steps
+    """
+    logger.info(f"Starting stream_sum calculation for n={n}")
     total = 0
     for i in range(1, n + 1):
         total += i
@@ -82,7 +75,10 @@ async def stream_sum_tool(n: int, ctx: Context):
             total=n,
             message=f"Computed sum up to {i}: {total}"
         )
+        logger.debug(f"Progress: {i}/{n}, current total: {total}")
         await asyncio.sleep(0.5)
+
+    logger.info(f"Completed stream_sum: final_sum={total}, steps={n}")
     return {"final_sum": total, "steps": n}
 
 
@@ -90,18 +86,42 @@ def main():
     """
     Main entry point for the CLI.
 
-    Parses configuration from environment variables and starts the MCP server
-    with the specified transport type. Defaults to SSE transport if no
-    environment variables are set.
+    Loads configuration from environment variables and starts the MCP server
+    with the specified transport type.
+
+    Exit codes:
+        0: Success
+        1: Configuration error
     """
     try:
-        config = parse_config()
-        print(f"Starting MCP server with transport: {config['transport']}")
-        print(f"Host: {config['host']}, Port: {config['port']}")
-        app.run(**config)
+        # Load configuration
+        config = load_config()
+
+        # Log configuration
+        logger.info("=" * 60)
+        logger.info("Starting MCP Server")
+        logger.info("=" * 60)
+        config.log_config()
+        logger.info("=" * 60)
+
+        # Get run configuration
+        run_config = config.to_run_config()
+
+        # Start server
+        logger.info(f"Server starting on {config.mcp_host}:{config.mcp_port}")
+        app.run(**run_config)
+
     except ValueError as e:
+        logger.error(f"Configuration error: {e}")
         print(f"Configuration error: {e}", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        logger.info("Server shutdown requested by user")
+        sys.exit(0)
+    except Exception as e:
+        logger.exception(f"Unexpected error: {e}")
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
