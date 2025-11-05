@@ -1,0 +1,46 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.env.*
+.envrc
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Project specific (uncomment if needed)
+# test_data/
+# scripts/
+# resources/reports/
