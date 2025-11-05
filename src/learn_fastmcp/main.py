@@ -2,7 +2,6 @@
 FastMCP Server - Main Entry Point
 
 This module provides the main entry point for the FastMCP server application.
-It demonstrates different transport mechanisms for MCP (Model Context Protocol).
 """
 
 import asyncio
@@ -113,6 +112,7 @@ def main():
         else:
             logger.info(f"Server starting on {config.mcp_host}:{config.mcp_port} "
                        f"({run_config.get('transport', 'unknown')} transport)")
+            
         app.run(**run_config)
 
     except ValueError as e:
